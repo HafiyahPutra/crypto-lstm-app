@@ -29,7 +29,7 @@ def initialize_model():
     global model
     try:
         # Try to load pre-trained model if exists
-        model = load_model('model.h5')
+        model = load_model('final_model.h5')
         print("Loaded pre-trained model from disk")
     except:
         # Build new model if no saved model found
