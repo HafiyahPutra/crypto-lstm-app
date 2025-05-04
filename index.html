@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Price Prediction</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        .prediction-plot {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bitcoin Price Prediction</h1>
+        
+        <div class="controls">
+            <label for="days">Prediction Days:</label>
+            <input type="number" id="days" value="7" min="1" max="30">
+            <button onclick="getPrediction()">Predict</button>
+            <button onclick="trainModel()">Retrain Model</button>
+        </div>
+        
+        <div class="chart-container">
+            <img id="predictionPlot" alt="Prediction Plot">
+        </div>
+        
+        <div id="plot-container">
+            <img id="predictionPlotUnique" class="prediction-plot" alt="Bitcoin price prediction plot" title="Bitcoin price prediction plot">
+        </div>
+    </div>
+
+    <script>
+        let priceChart = null;
+        
+        function getPrediction() {
+            const days = document.getElementById('days').value;
+            
+            fetch(`/predict?days=${days}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+                    
+                    // Update the plot image
+                    document.getElementById('predictionPlot').src = `data:image/png;base64,${data.plot}`;
+                    
+                    // Update the chart
+                    updateChart(data);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Prediction failed');
+                });
+        }
+        
+        function updateChart(data) {
+            const ctx = document.getElementById('priceChart').getContext('2d');
+            
+            if (priceChart) {
+                priceChart.destroy();
+            }
+            
+            priceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.dates,
+                    datasets: [{
+                        label: 'Predicted Price (USD)',
+                        data: data.prices,
+                        borderColor: 'rgb(255, 99, 132)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false
+                        }
+                    }
+                }
+            });
+        }
+        
+        function trainModel() {
+            fetch('/train', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Training failed');
+                });
+        }
+        
+        // Initial load
+        document.addEventListener('DOMContentLoaded', getPrediction);
+    </script>
+</body>
+</html>
